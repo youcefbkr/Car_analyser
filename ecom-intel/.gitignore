@@ -1,0 +1,3 @@
+runs/
+memory/*
+!memory/SCHEMA.md
