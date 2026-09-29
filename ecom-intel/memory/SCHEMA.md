@@ -6,6 +6,11 @@ Each run writes `runs/<date>_<mode>/snapshot.json` and the orchestrator merges i
 - `memory/snapshots.jsonl` — one line per run (the snapshot object below)
 - `memory/problem_registry.json` — every problem ever detected, keyed by stable ID
 - `memory/decisions_log.json` — every proposed action + the human's decision + outcome
+- `memory/owner_facts.json` — owner-verified inputs (costs, FX, fees, labour, approvals); every
+  run's context must load it and treat it as [VERIFIED | source=owner]
+
+The memory is kept on the owner's laptop in the local clone of this repo (see the repo's
+CLAUDE.md). In a cloud session, ask for the latest `ecom-intel-private-*.zip` before running.
 
 ## snapshot.json
 ```json
