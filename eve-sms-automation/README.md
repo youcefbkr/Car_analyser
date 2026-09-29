@@ -98,8 +98,22 @@ after that moment produce SMS.
 Credentials are only read from the environment and never written to logs,
 the database or git.
 
+## Scheduler
+
+The Claude Routine **"Eve World SMS – hourly Tassyir check"** fires every hour
+at minute 59 (UTC) and starts a fresh Claude session that follows
+`ROUTINE.md`. A status change is therefore texted at the next hourly run, not
+instantly (up to about an hour later). A test fire on 2026-09-29 cloned the
+code, read and saved the database with correct version pins, and raised the
+expected alert because the Routine had no Tassyir connector yet. That run
+used about 72k tokens of context; expect somewhat more once Tassyir data is
+included, 24 times a day, counted against your Claude plan.
+
 ## Going live
 
+0. In claude.ai → Routines → "Eve World SMS – hourly Tassyir check": attach
+   the **Tassyir** connector, then turn the Routine on (it was paused so it
+   would not alert you every hour while it cannot reach Tassyir).
 1. Install **SMS Gateway for Android** (github.com/capcom6/android-sms-gateway)
    on an Android phone with the SIM that will send the SMS; enable
    "Cloud server" and note the username and password it shows. Keep the phone
