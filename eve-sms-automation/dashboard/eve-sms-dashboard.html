@@ -1,0 +1,268 @@
+<title>Eve World SMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column control sheet — status strip, run summary, notification log, run history. */
+:root {
+  --bg: #fbf7f8;
+  --panel: #ffffff;
+  --ink: #2b1d2a;
+  --muted: #7a6877;
+  --line: #eadfe5;
+  --accent: #b03a6f;
+  --accent-soft: #f6e3ec;
+  --ok: #1f7a4d;
+  --ok-soft: #e2f3ea;
+  --warn: #9a6100;
+  --warn-soft: #fbf0d9;
+  --bad: #b42318;
+  --bad-soft: #fde7e4;
+  --info: #3d5a99;
+  --info-soft: #e6ecf8;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171216; --panel: #211a20; --ink: #f3e9ef; --muted: #b3a0ad; --line: #3a2e37;
+    --accent: #f07aae; --accent-soft: #3d2231; --ok: #6fd3a0; --ok-soft: #173427;
+    --warn: #f0bf62; --warn-soft: #3a2c12; --bad: #ff8a7a; --bad-soft: #43201c;
+    --info: #9db6f0; --info-soft: #1f2940; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171216; --panel: #211a20; --ink: #f3e9ef; --muted: #b3a0ad; --line: #3a2e37;
+  --accent: #f07aae; --accent-soft: #3d2231; --ok: #6fd3a0; --ok-soft: #173427;
+  --warn: #f0bf62; --warn-soft: #3a2c12; --bad: #ff8a7a; --bad-soft: #43201c;
+  --info: #9db6f0; --info-soft: #1f2940; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: grid; gap: 28px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+h1 { font-family: var(--font-display); font-size: 1.9rem; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 small { font-family: var(--font-body); font-weight: 500; font-size: .95rem; color: var(--muted); margin-inline-start: 8px; letter-spacing: 0; }
+h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
+.label { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.p-ok { color: var(--ok); background: var(--ok-soft); }
+.p-warn { color: var(--warn); background: var(--warn-soft); }
+.p-bad { color: var(--bad); background: var(--bad-soft); }
+.p-info { color: var(--info); background: var(--info-soft); }
+.p-muted { color: var(--muted); background: var(--line); }
+.strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.strip > div { background: var(--panel); padding: 14px 16px; display: grid; gap: 4px; min-width: 0; }
+.strip .v { font-size: 1.05rem; font-weight: 600; overflow-wrap: anywhere; }
+@media (max-width: 560px) { .strip > div:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+.alerts { display: grid; gap: 10px; }
+.alert { border: 1px solid var(--bad); background: var(--bad-soft); color: var(--ink); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; }
+.alert b { color: var(--bad); }
+.section { display: grid; gap: 12px; }
+.section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.filters button { font: inherit; font-size: .82rem; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+.filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.filters button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+th, td { text-align: start; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.msg { min-width: 240px; max-width: 360px; }
+details summary { cursor: pointer; color: var(--accent); font-size: .82rem; }
+details pre { white-space: pre-wrap; direction: auto; unicode-bidi: plaintext; font-family: var(--font-body); margin: 6px 0 0; padding: 8px 10px; background: var(--accent-soft); border-radius: 8px; }
+.err { color: var(--bad); font-size: .8rem; overflow-wrap: anywhere; }
+.empty { padding: 28px 16px; text-align: center; color: var(--muted); }
+.note { color: var(--muted); font-size: .85rem; max-width: 70ch; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Eve World SMS <small>order status notifications</small></h1>
+    <span id="mode-pill" class="pill p-muted">Loading…</span>
+  </header>
+
+  <div class="strip" id="strip">
+    <div><span class="label">Last hourly run</span><span class="v mono" id="s-last">—</span></div>
+    <div><span class="label">Orders checked</span><span class="v mono" id="s-checked">—</span></div>
+    <div><span class="label">SMS sent (last run)</span><span class="v mono" id="s-sent">—</span></div>
+    <div><span class="label">Failed (last run)</span><span class="v mono" id="s-failed">—</span></div>
+    <div><span class="label">Baseline set</span><span class="v mono" id="s-baseline">—</span></div>
+  </div>
+
+  <div class="alerts" id="alerts" hidden></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Notification log</h2>
+      <div class="filters" id="filters" role="group" aria-label="Filter by result">
+        <button type="button" id="f-all" data-f="all" aria-pressed="true">All</button>
+        <button type="button" id="f-sent" data-f="sent" aria-pressed="false">Sent</button>
+        <button type="button" id="f-failed" data-f="failed" aria-pressed="false">Failed</button>
+        <button type="button" id="f-other" data-f="other" aria-pressed="false">Skipped / invalid</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Order</th><th>Customer</th><th>Status</th><th>Phone</th><th>Total</th><th>Result</th><th>Tries</th><th>Message</th></tr></thead>
+        <tbody id="log-body"><tr><td colspan="9" class="empty">No notifications yet. Each SMS the hourly run sends, skips or fails on appears here.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Run history</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Run</th><th>Mode</th><th>Checked</th><th>Changes</th><th>Sent</th><th>Failed</th><th>Skipped</th><th>Invalid phones</th><th>API errors</th><th>Notes</th></tr></thead>
+        <tbody id="runs-body"><tr><td colspan="10" class="empty">No runs recorded yet. A row appears after every hourly check of Tassyir.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="note">This page only reads. The hourly Claude routine writes these records; Tassyir stays the source of truth for orders.</p>
+</div>
+
+<script>
+const STATUS_LABEL = { confirmed: "Confirmed", delivery_desk: "At delivery company", delivered: "Delivered", cancelled: "Cancelled", returned: "Returned" };
+const RESULT_PILL = {
+  sent: ["Sent", "p-ok"], queued: ["Queued on phone", "p-info"], delivered: ["Delivered", "p-ok"],
+  test_sent: ["Sent to test phone", "p-info"], dry_run: ["Dry run", "p-muted"],
+  failed: ["Failed", "p-bad"], sending: ["Sending", "p-info"], unconfirmed: ["Unconfirmed", "p-warn"],
+  invalid_phone: ["Invalid phone", "p-warn"],
+  skipped: ["Skipped", "p-muted"], baseline: ["Baseline", "p-muted"]
+};
+let logRows = [];
+let ledger = {};
+let filter = "all";
+
+const $ = (id) => document.getElementById(id);
+const fmtDate = (iso) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleString("fr-DZ", { timeZone: "Africa/Algiers", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+};
+const cell = (text, cls) => { const td = document.createElement("td"); if (cls) td.className = cls; td.textContent = text ?? "—"; return td; };
+const pill = (result) => {
+  const [label, cls] = RESULT_PILL[result] || [result || "—", "p-muted"];
+  const s = document.createElement("span"); s.className = "pill " + cls; s.textContent = label; return s;
+};
+const bucket = (r) => ["sent", "queued", "delivered", "test_sent", "dry_run"].includes(r) ? "sent" : ["failed", "unconfirmed"].includes(r) ? "failed" : "other";
+
+function renderLog() {
+  const body = $("log-body");
+  const rows = logRows.filter((r) => filter === "all" || bucket(effectiveResult(r)) === filter);
+  body.replaceChildren();
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    const td = cell(logRows.length ? "Nothing matches this filter." : "No notifications yet. Each SMS the hourly run sends, skips or fails on appears here.", "empty");
+    td.colSpan = 9; tr.append(td); body.append(tr); return;
+  }
+  for (const r of rows) {
+    const tr = document.createElement("tr");
+    const res = effectiveResult(r);
+    const resTd = document.createElement("td"); resTd.append(pill(res));
+    if (r.error) { const e = document.createElement("div"); e.className = "err"; e.textContent = r.error; resTd.append(e); }
+    const msgTd = document.createElement("td"); msgTd.className = "msg";
+    if (r.message) {
+      const det = document.createElement("details"); const sum = document.createElement("summary");
+      sum.textContent = "Show SMS"; const pre = document.createElement("pre"); pre.textContent = r.message;
+      det.append(sum, pre); msgTd.append(det);
+    } else { msgTd.textContent = "—"; }
+    tr.append(
+      cell(fmtDate(r.sent_at || r.created_at), "mono"),
+      cell(r.order_number || r.order_id, "mono"),
+      cell(r.customer_name || "—"),
+      cell(STATUS_LABEL[r.status] || r.status),
+      cell(r.phone_number || r.phone_raw || "—", "mono"),
+      cell(r.total_price != null ? r.total_price + " DA" : "—", "mono"),
+      resTd,
+      cell(String(r.attempt_count ?? 0), "mono"),
+      msgTd
+    );
+    body.append(tr);
+  }
+}
+
+function effectiveResult(r) {
+  const l = ledger[r.order_id + ":" + r.status];
+  return (l && l.result) || r.result;
+}
+
+function renderRuns(runs) {
+  const body = $("runs-body");
+  body.replaceChildren();
+  if (!runs.length) {
+    const tr = document.createElement("tr"); const td = cell("No runs recorded yet. A row appears after every hourly check of Tassyir.", "empty");
+    td.colSpan = 10; tr.append(td); body.append(tr); return;
+  }
+  for (const r of runs) {
+    const tr = document.createElement("tr");
+    const notes = [];
+    if (r.baseline) notes.push("Baseline: history recorded, no SMS");
+    if (r.unknown_statuses && r.unknown_statuses.length) notes.push("Unmapped: " + r.unknown_statuses.join(", "));
+    if (r.deferred) notes.push(r.deferred + " deferred");
+    if (r.phase) notes.push(r.phase);
+    tr.append(
+      cell(fmtDate(r.finished_at || r.started_at), "mono"), cell(r.mode),
+      cell(String(r.orders_checked ?? "—"), "mono"), cell(String(r.status_changes ?? "—"), "mono"),
+      cell(String(r.sms_sent ?? 0), "mono"), cell(String(r.sms_failed ?? 0), "mono"),
+      cell(String(r.skipped ?? 0), "mono"), cell(String(r.invalid_phones ?? 0), "mono"),
+      cell(String(r.api_errors ?? 0), "mono"), cell(notes.join(" · ") || "—")
+    );
+    body.append(tr);
+  }
+}
+
+function renderMeta(meta) {
+  if (!meta) return;
+  const mode = meta.mode || "dry_run";
+  const map = { live: ["Live", "p-ok"], test: ["Test mode", "p-info"], dry_run: ["Dry run — no SMS sent", "p-warn"] };
+  const [label, cls] = map[mode] || [mode, "p-muted"];
+  $("mode-pill").className = "pill " + cls; $("mode-pill").textContent = label;
+  $("s-baseline").textContent = fmtDate(meta.baseline_at);
+  const run = meta.last_run || {};
+  $("s-last").textContent = fmtDate(run.finished_at || run.started_at);
+  $("s-checked").textContent = run.orders_checked ?? "—";
+  $("s-sent").textContent = run.sms_sent ?? "—";
+  $("s-failed").textContent = run.sms_failed ?? "—";
+  const alerts = (run.alerts || []);
+  const box = $("alerts"); box.replaceChildren();
+  for (const a of alerts) {
+    const div = document.createElement("div"); div.className = "alert";
+    const b = document.createElement("b"); b.textContent = a.title || "Needs attention";
+    const p = document.createElement("div"); p.style.whiteSpace = "pre-wrap"; p.textContent = a.body || "";
+    div.append(b, p); box.append(div);
+  }
+  box.hidden = !alerts.length;
+}
+
+$("filters").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-f]"); if (!btn) return;
+  filter = btn.dataset.f;
+  for (const b of $("filters").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b === btn));
+  renderLog();
+});
+
+(async () => {
+  const db = window.claude?.use ? await window.claude.use("db") : null;
+  if (!db) { $("mode-pill").textContent = "Open in Claude to see data"; return; }
+  db.doc("sms/meta").onSnapshot((snap) => renderMeta(snap.exists ? snap.data() : null), () => {});
+  db.collection("sms").where("kind", "==", "month").onSnapshot((snap) => {
+    ledger = {};
+    for (const d of snap.docs) Object.assign(ledger, (d.data().ledger) || {});
+    renderLog();
+  }, () => {});
+  db.collection("sms_log").orderBy("created_at", "desc").limit(300).onSnapshot((snap) => {
+    logRows = snap.docs.map((d) => d.data()); renderLog();
+  }, () => {});
+  db.collection("sms_runs").orderBy("started_at", "desc").limit(72).onSnapshot((snap) => {
+    renderRuns(snap.docs.map((d) => d.data()));
+  }, () => {});
+})();
+</script>

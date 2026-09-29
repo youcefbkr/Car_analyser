@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+# never commit run data: it contains customer names and phone numbers
+run*/
+snapshot*.json
+verify/
